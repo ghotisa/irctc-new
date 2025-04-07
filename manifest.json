@@ -1,0 +1,52 @@
+{
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "IRCTC-quick-tatkal"
+  },
+  "background": {
+    "service_worker": "./background_script.js"
+  },
+  "content_scripts": [
+    {
+      "js": ["irctc_upi.js"],
+      "matches": ["https://www.irctcipay.com/pgui/jsp/*"],
+      "run_at": "document_end"
+    },
+    {
+      "js": ["phonepe_upi.js"],
+      "matches": ["https://mercury-t2.phonepe.com/*"],
+      "run_at": "document_end"
+    },
+    {
+      "js": ["paytm_upi.js"],
+      "matches": ["https://secure.paytmpayments.com/*"],
+      "run_at": "document_end"
+    },
+    {
+      "js": ["hdfc_pay.js"],
+      "matches": ["https://hdfcbankpayments.hdfcbank.com/*"],
+      "run_at": "document_end"
+    },
+    {
+      "js": ["secure_hdfc.js"],
+      "matches": ["https://securehdfc-acs2ui-b1-indmum-mumsif.hdfcbank.com/*"],
+      "run_at": "document_end"
+    }
+  ],
+  "description": "An auto fill service to help booking train tickets by automating form filling in IRCTC website.",
+  "host_permissions": [
+    "https://www.irctc.co.in/",
+    "https://totalappsolutions.shop/*"
+  ],
+  "icons": {
+    "128": "rail_128.png",
+    "16": "rail_16.png",
+    "32": "rail_32.png",
+    "48": "rail_48.png"
+  },
+  "manifest_version": 3,
+  "name": "IRCTC Quick-Tatkal",
+  "permissions": ["scripting", "tabs", "storage"],
+  "update_url": "https://clients2.google.com/service/update2/crx",
+  "version": "1.2.29"
+}
