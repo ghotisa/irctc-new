@@ -36,7 +36,6 @@
   "description": "An auto fill service to help booking train tickets by automating form filling in IRCTC website.",
   "host_permissions": [
     "https://www.irctc.co.in/",
-    "https://totalappsolutions.shop/*"
   ],
   "icons": {
     "128": "rail_128.png",
@@ -47,6 +46,12 @@
   "manifest_version": 3,
   "name": "IRCTC Quick-Tatkal",
   "permissions": ["scripting", "tabs", "storage"],
+  "web_accessible_resources": [
+    {
+      "resources": ["stationlist.json", "train_data.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "update_url": "https://clients2.google.com/service/update2/crx",
   "version": "1.2.29"
 }

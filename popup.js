@@ -88,26 +88,27 @@ const stationData = [],
   stationList = [];
 async function fetchStationData() {
   try {
-    const e = await fetch('https://totalappsolutions.shop/stationlist.json');
-    if (!e.ok)
+    // Use local stationlist.json instead of API
+    const response = await fetch(chrome.runtime.getURL('stationlist.json'));
+    if (!response.ok)
       throw (
         (alert(
           'Unable to fetch station data',
-          `HTTP error! status: ${e.status}`
+          `HTTP error! status: ${response.status}`
         ),
         new Error(
           'Unable to fetch station data',
-          `HTTP error! status: ${e.status}`
+          `HTTP error! status: ${response.status}`
         ))
       );
-    const t = await e.json();
-    stationData.push(...t);
+    const stationDataArray = await response.json();
+    stationData.push(...stationDataArray);
     for (let e in stationData)
       stationList.push(stationData[e].name + ' - ' + stationData[e].code);
     return stationList;
   } catch (e) {
     throw (
-      (console.error('Station date fetching error:', e),
+      (console.error('Station data fetching error:', e),
       alert('Station data fetching error:', e),
       e)
     );
@@ -115,16 +116,17 @@ async function fetchStationData() {
 }
 async function fetchTrainData() {
   try {
-    const e = await fetch('https://totalappsolutions.shop/train_data.js');
-    if (!e.ok)
+    // Use local train_data.js instead of API
+    const response = await fetch(chrome.runtime.getURL('train_data.js'));
+    if (!response.ok)
       throw (
-        (alert('Unable to fetch train data', `HTTP error! status: ${e.status}`),
+        (alert('Unable to fetch train data', `HTTP error! status: ${response.status}`),
         new Error(
           'Unable to fetch train data',
-          `HTTP error! status: ${e.status}`
+          `HTTP error! status: ${response.status}`
         ))
       );
-    return (await e.text()).split(/\r?\n/);
+    return (await response.text()).split(/\r?\n/);
   } catch (e) {
     throw (
       (console.error('Train data fetching error:', e),
