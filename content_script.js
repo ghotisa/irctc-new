@@ -58,14 +58,132 @@ function addDelay(e) {
     o = Date.now();
   } while (o - t < e);
 }
+
+// Handle captcha auto-submit logic
+function handleCaptchaSubmit() {
+  const l = document.querySelector('app-login'),
+    i = document.querySelector('#divMain > div > app-review-booking > p-toast');
+  
+  let c = new MutationObserver((e) => {
+    l &&
+      l.innerText.toLowerCase().includes('valid captcha') &&
+      (setTimeout(() => {
+        getCaptchaTC();
+      }, 500),
+      console.log('disconnect loginCaptcha'),
+      c.disconnect()),
+      i &&
+        i.innerText.toLowerCase().includes('valid captcha') &&
+        (setTimeout(() => {
+          getCaptchaTC();
+        }, 500),
+        console.log('disconnect reviewCaptcha'),
+        c.disconnect());
+  });
+  
+  if (
+    (l &&
+      (console.log('observe loginCaptcha'),
+      c.observe(l, {
+        childList: !0,
+        subtree: !0,
+        characterDataOldValue: !0,
+      })),
+    i &&
+      (console.log('observe reviewCaptcha'),
+      c.observe(i, {
+        childList: !0,
+        subtree: !0,
+        characterDataOldValue: !0,
+      })),
+    void 0 !== user_data.other_preferences.CaptchaSubmitMode &&
+      'A' == user_data.other_preferences.CaptchaSubmitMode)
+  ) {
+    console.log('Auto submit captcha');
+    const e = document.querySelector('#divMain > app-login');
+    if (e) {
+      const t = e.querySelector(
+          "button[type='submit'][class='search_btn train_Search']"
+        ),
+        o = e.querySelector(
+          "button[type='submit'][class='search_btn train_Search train_Search_custom_hover']"
+        ),
+        r = e.querySelector(
+          "input[type='text'][formcontrolname='userid']"
+        ),
+        a = e.querySelector(
+          "input[type='password'][formcontrolname='password']"
+        );
+      '' != r.value && '' != a.value
+        ? (console.log('Submit login info and captcha'),
+          setTimeout(() => {
+            try {
+              t.click();
+            } catch (e) {}
+            try {
+              o.click();
+            } catch (e) {}
+          }, 500))
+        : () => {
+            setTimeout(() => {
+              try {
+                t.click();
+              } catch (e) {}
+              try {
+                o.click();
+              } catch (e) {}
+            }, 500);
+          };
+    }
+    if (
+      ((reviewPage = document.querySelector(
+        '#divMain > div > app-review-booking'
+      )),
+      reviewPage)
+    ) {
+      console.log('reviewPage', reviewPage);
+      if ('' != document.querySelector('#captcha').value) {
+        const e = document.querySelector('.btnDefault.train_Search');
+        e &&
+          setTimeout(() => {
+            if (
+              (console.log(
+                'Confirm berth',
+                user_data.other_preferences.confirmberths
+              ),
+              user_data.other_preferences.confirmberths)
+            )
+              if (document.querySelector('.AVAILABLE'))
+                console.log('Seats available'), e.click();
+              else {
+                if (
+                  1 !=
+                  confirm(
+                    'No seats Available, Do you still want to continue booking?'
+                  )
+                )
+                  return void console.log('No Seats available, STOP');
+                console.log('No Seats available, still Go ahead'),
+                  e.click();
+              }
+            else e.click();
+          }, 500);
+      } else
+        alert('Captcha automatically not filled, submit manually');
+    }
+  } else console.log('Manual captcha submission');
+}
+
 chrome.runtime.onMessage.addListener((e, t, o) => {
   if ('irctc' !== e.id) return void o('Invalid Id');
   const r = e.msg.type;
   if ('selectJourney' === r) {
-    console.log('selectJourney'),
-      (popupbtn = document.querySelectorAll('.btn.btn-primary')),
-      popupbtn.length > 0 &&
-        (popupbtn[1].click(), console.log('Close last trxn popup'));
+    console.log('selectJourney');
+    const popupbtn = document.querySelectorAll('.btn.btn-primary');
+    popupbtn.forEach(btn => {
+      btn.click();
+      console.log('Close last trxn popup');
+    });
     const e = [
       ...document
         .querySelector('#divMain > div > app-train-list')
@@ -291,267 +409,92 @@ chrome.runtime.onMessage.addListener((e, t, o) => {
   o('Something went wrong');
 });
 let captchaRetry = 0;
-function getCaptcha() {
-  if (captchaRetry < 100) {
-    console.log('getCaptcha'), (captchaRetry += 1);
-    const e = document.querySelector('.captcha-img');
-    if (e) {
-      const t = new XMLHttpRequest(),
-        o = e.src.substr(22),
-        r = JSON.stringify({
-          requests: [
-            {
-              image: { content: o },
-              features: [{ type: 'TEXT_DETECTION' }],
-              imageContext: { languageHints: ['en'] },
-            },
-          ],
-        }),
-        a = 'AIzaSyDnvpf2Tusn2Cp2icvUjGBBbfn_tY86QgQ';
-      user_data.other_preferences.projectId;
-      t.open(
-        'POST',
-        'https://vision.googleapis.com/v1/images:annotate?key=' + a,
-        !1
-      ),
-        (t.onload = function () {
-          if (200 != t.status)
-            console.log(`Error ${t.status}: ${t.statusText}`),
-              console.log(t.response);
-          else {
-            let e = '';
-            const o = document.querySelector('#captcha');
-            (e = JSON.parse(t.response).responses[0].fullTextAnnotation.text),
-              console.log('Org text', e);
-            const r =
-                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789=@',
-              a = Array.from(
-                e.split(' ').join('').replace(')', 'J').replace(']', 'J')
-              );
-            let n = '';
-            for (const e of a) r.includes(e) && (n += e);
-            (o.value = n),
-              '' == e &&
-                (console.log('Null captcha text from api'),
-                document
-                  .getElementsByClassName('glyphicon glyphicon-repeat')[0]
-                  .parentElement.click(),
-                setTimeout(() => {
-                  getCaptcha();
-                }, 500)),
-              o.dispatchEvent(new Event('input')),
-              o.dispatchEvent(new Event('change')),
-              o.focus();
-            const l = document.querySelector('app-login'),
-              i = document.querySelector(
-                '#divMain > div > app-review-booking > p-toast'
-              );
-            let c = new MutationObserver((e) => {
-              l &&
-                l.innerText.toLowerCase().includes('valid captcha') &&
-                (setTimeout(() => {
-                  getCaptcha();
-                }, 500),
-                console.log('disconnect loginCaptcha'),
-                c.disconnect()),
-                i &&
-                  i.innerText.toLowerCase().includes('valid captcha') &&
-                  (setTimeout(() => {
-                    getCaptcha();
-                  }, 500),
-                  console.log('disconnect reviewCaptcha'),
-                  c.disconnect());
-            });
-            l &&
-              (console.log('observe loginCaptcha'),
-              c.observe(l, {
-                childList: !0,
-                subtree: !0,
-                characterDataOldValue: !0,
-              })),
-              i &&
-                (console.log('observe reviewCaptcha'),
-                c.observe(i, {
-                  childList: !0,
-                  subtree: !0,
-                  characterDataOldValue: !0,
-                }));
-          }
-        }),
-        (t.onerror = function () {
-          console.log('Captcha API Request failed');
-        }),
-        t.send(r);
-    } else
-      console.log('wait for captcha load'),
-        setTimeout(() => {
-          getCaptcha();
-        }, 1e3);
-  }
-}
-function getCaptchaTC() {
-  if (captchaRetry < 100) {
+
+async function getCaptchaTC() {
+  if (captchaRetry < 10) {
     console.log('getCaptchaTC'), (captchaRetry += 1);
-    const e = document.querySelector('.captcha-img');
-    if (e) {
-      const t = new XMLHttpRequest(),
-        o = e.src.substr(22),
-        r = JSON.stringify({
-          client: 'chrome extension',
-          location: 'https://www.irctc.co.in/nget/train-search',
-          version: '0.3.8',
-          case: 'mixed',
-          promise: 'true',
-          extension: !0,
-          userid: 'nandkumarsh222@gmail.com',
-          apikey: 'hW6X7tAP8nMtDRpaQk2m',
-          data: o,
-        });
-      t.open('POST', 'https://api.apitruecaptcha.org/one/gettext', !1),
-        (t.onload = function () {
-          if (200 != t.status)
-            console.log(`Error ${t.status}: ${t.statusText}`),
-              console.log(t.response);
-          else {
-            let e = '';
-            const o = document.querySelector('#captcha');
-            (e = JSON.parse(t.response).result), console.log('Org text', e);
-            const r =
-                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789=@',
-              a = Array.from(
-                e.split(' ').join('').replace(')', 'J').replace(']', 'J')
-              );
-            let n = '';
-            for (const e of a) r.includes(e) && (n += e);
-            (o.value = n),
-              '' == e &&
-                (console.log('Null captcha text from api'),
-                document
-                  .getElementsByClassName('glyphicon glyphicon-repeat')[0]
-                  .parentElement.click(),
-                setTimeout(() => {
-                  getCaptchaTC();
-                }, 500)),
-              o.dispatchEvent(new Event('input')),
-              o.dispatchEvent(new Event('change')),
-              o.focus();
-            const l = document.querySelector('app-login'),
-              i = document.querySelector(
-                '#divMain > div > app-review-booking > p-toast'
-              );
-            let c = new MutationObserver((e) => {
-              l &&
-                l.innerText.toLowerCase().includes('valid captcha') &&
-                (setTimeout(() => {
-                  getCaptchaTC();
-                }, 500),
-                console.log('disconnect loginCaptcha'),
-                c.disconnect()),
-                i &&
-                  i.innerText.toLowerCase().includes('valid captcha') &&
-                  (setTimeout(() => {
-                    getCaptchaTC();
-                  }, 500),
-                  console.log('disconnect reviewCaptcha'),
-                  c.disconnect());
-            });
-            if (
-              (l &&
-                (console.log('observe loginCaptcha'),
-                c.observe(l, {
-                  childList: !0,
-                  subtree: !0,
-                  characterDataOldValue: !0,
-                })),
-              i &&
-                (console.log('observe reviewCaptcha'),
-                c.observe(i, {
-                  childList: !0,
-                  subtree: !0,
-                  characterDataOldValue: !0,
-                })),
-              void 0 !== user_data.other_preferences.CaptchaSubmitMode &&
-                'A' == user_data.other_preferences.CaptchaSubmitMode)
-            ) {
-              console.log('Auto submit captcha');
-              const e = document.querySelector('#divMain > app-login');
-              if (e) {
-                const t = e.querySelector(
-                    "button[type='submit'][class='search_btn train_Search']"
-                  ),
-                  o = e.querySelector(
-                    "button[type='submit'][class='search_btn train_Search train_Search_custom_hover']"
-                  ),
-                  r = e.querySelector(
-                    "input[type='text'][formcontrolname='userid']"
-                  ),
-                  a = e.querySelector(
-                    "input[type='password'][formcontrolname='password']"
-                  );
-                '' != r.value && '' != a.value
-                  ? (console.log('Submit login info and captcha'),
-                    setTimeout(() => {
-                      try {
-                        t.click();
-                      } catch (e) {}
-                      try {
-                        o.click();
-                      } catch (e) {}
-                    }, 500))
-                  : () => {
-                      setTimeout(() => {
-                        try {
-                          t.click();
-                        } catch (e) {}
-                        try {
-                          o.click();
-                        } catch (e) {}
-                      }, 500);
-                    };
-              }
-              if (
-                ((reviewPage = document.querySelector(
-                  '#divMain > div > app-review-booking'
-                )),
-                reviewPage)
-              ) {
-                console.log('reviewPage', reviewPage);
-                if ('' != document.querySelector('#captcha').value) {
-                  const e = document.querySelector('.btnDefault.train_Search');
-                  e &&
-                    setTimeout(() => {
-                      if (
-                        (console.log(
-                          'Confirm berth',
-                          user_data.other_preferences.confirmberths
-                        ),
-                        user_data.other_preferences.confirmberths)
-                      )
-                        if (document.querySelector('.AVAILABLE'))
-                          console.log('Seats available'), e.click();
-                        else {
-                          if (
-                            1 !=
-                            confirm(
-                              'No seats Available, Do you still want to continue booking?'
-                            )
-                          )
-                            return void console.log('No Seats available, STOP');
-                          console.log('No Seats available, still Go ahead'),
-                            e.click();
-                        }
-                      else e.click();
-                    }, 500);
-                } else
-                  alert('Captcha automatically not filled, submit manually');
-              }
-            } else console.log('Manual captcha submission');
+    const captchaImg = document.querySelector('.captcha-img');
+    if (captchaImg) {
+      console.log('Processing captcha with Google Cloud Vision...');
+      
+      try {
+        // Convert image to base64
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = captchaImg.naturalWidth || captchaImg.width;
+        canvas.height = captchaImg.naturalHeight || captchaImg.height;
+        ctx.drawImage(captchaImg, 0, 0);
+        const base64Image = canvas.toDataURL('image/png').substring(22); // Remove data:image/png;base64,
+        
+        // Get API key from user_data (should be stored in storage)
+        const apiKey = 'YOUR_API_KEY';
+        
+        // Call Google Cloud Vision API
+        const response = await fetch(
+          `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              requests: [
+                {
+                  image: { content: base64Image },
+                  features: [{ type: 'TEXT_DETECTION' }],
+                  imageContext: { languageHints: ['en'] },
+                },
+              ],
+            }),
           }
-        }),
-        (t.onerror = function () {
-          console.log('Captcha API Request failed');
-        }),
-        t.send(r);
+        );
+        
+        const result = await response.json();
+        
+        if (result.responses && result.responses[0] && result.responses[0].fullTextAnnotation) {
+          const recognizedText = result.responses[0].fullTextAnnotation.text;
+          console.log('Raw OCR Result:', recognizedText);
+          
+          // Clean up the recognized text
+          let cleanedText = recognizedText.trim();
+          
+          // Remove spaces and filter valid characters
+          const validChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=@';
+          cleanedText = cleanedText.split(' ').join('').replace(/[^A-Za-z0-9]/g, '');
+          cleanedText = Array.from(cleanedText).filter(char => validChars.includes(char)).join('');
+          
+          console.log('Cleaned OCR Result:', cleanedText);
+          console.log('Text length:', cleanedText.length);
+          
+          if (cleanedText && cleanedText.length > 0) {
+            const captchaInput = document.querySelector('#captcha');
+            if (captchaInput) {
+              captchaInput.value = cleanedText;
+              captchaInput.dispatchEvent(new Event('input'));
+              captchaInput.dispatchEvent(new Event('change'));
+              captchaInput.focus();
+              
+              // Handle auto-submit logic
+              handleCaptchaSubmit();
+            }
+          } else {
+            console.log('No text recognized, retrying...');
+            setTimeout(() => {
+              getCaptchaTC();
+            }, 1000);
+          }
+        } else {
+          console.log('No text recognized by Vision API, retrying...');
+          setTimeout(() => {
+            getCaptchaTC();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('OCR processing error:', error);
+        setTimeout(() => {
+          getCaptchaTC();
+        }, 1000);
+      }
     } else
       console.log('wait for captcha load'),
         setTimeout(() => {
