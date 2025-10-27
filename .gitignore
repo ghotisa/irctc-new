@@ -1,0 +1,6 @@
+node_modules
+background_script_built.js
+content_script_built.js
+content_script_built.js.map
+dist/
+*.map
