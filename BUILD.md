@@ -2,15 +2,6 @@
 
 ## Available Build Commands
 
-### Development Build
-```bash
-npm run build
-```
-- **Output**: Unminified code in root directory
-- **Files**: `content_script_built.js`, `background_script_built.js`
-- **Use Case**: Development and debugging
-- **Size**: ~29KB
-
 ### Production Build
 ```bash
 npm run build:prod
@@ -19,14 +10,6 @@ npm run build:prod
 - **Files**: Complete extension package in `dist/`
 - **Use Case**: Production deployment
 - **Size**: ~21KB (28% smaller)
-
-### Watch Mode (Development)
-```bash
-npm run build:watch
-```
-- **Output**: Auto-rebuilds on file changes
-- **Use Case**: Active development
-- **Location**: Root directory
 
 ## Production Build Details
 
@@ -75,21 +58,21 @@ dist/
 4. Click "Load unpacked"
 5. Select the **`dist/`** folder (not the root folder!)
 
-### Development vs Production
+## API Key Configuration
 
-| Aspect | Development | Production |
-|--------|-------------|------------|
-| Command | `npm run build` | `npm run build:prod` |
-| Location | Root directory | `dist/` folder |
-| Code | Readable | Minified |
-| Size | ~29KB | ~21KB |
-| Sourcemaps | Yes | No |
-| Use Case | Debugging | Deployment |
+Before building, you can customize the API key:
+
+1. Edit `content_script.js` line 431
+2. Replace with your Google Cloud Vision API key
+3. Run: `npm run build:prod`
+
+Get API key from: https://console.cloud.google.com/
 
 ## Notes
 
 - The `dist/` folder is excluded from git (.gitignore)
 - Always run production build before deploying
 - Production build uses Google Cloud Vision API for OCR
-- Add your Cloud Vision Api key at `YOUR_API_KEY` in content_script.js
+- API key is embedded in content_script.js
+- To use your own API key, edit line 431 in content_script.js before building
 

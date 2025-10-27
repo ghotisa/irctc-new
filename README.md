@@ -5,7 +5,7 @@ An auto-fill service to help booking train tickets by automating form filling in
 ## Features
 
 - ✅ Automatic form filling for train ticket booking
-- ✅ OCR-based captcha solving using Tesseract.js
+- ✅ OCR-based captcha solving using Google Cloud Vision API
 - ✅ Support for multiple payment methods
 - ✅ Auto-retry logic for failed captcha recognition
 
@@ -33,24 +33,39 @@ The extension uses esbuild to bundle the content script. You need to build befor
 # Build for production (minified, optimized)
 npm run build:prod
 
+# Build for development (unminified, readable)
+npm run build
 ```
 
 ### Loading the Extension
 
+**For Development:**
 1. Build the project: `npm run build`
 2. Open Chrome and go to `chrome://extensions/`
 3. Enable "Developer mode"
 4. Click "Load unpacked" and select the project folder
 
+**For Production:**
+1. Build the project: `npm run build:prod`
+2. Open Chrome and go to `chrome://extensions/`
+3. Enable "Developer mode"
+4. Click "Load unpacked" and select the **`dist/`** folder
+
 ## File Structure
 
 ```
-├── background_script.js          # Source background script (simple)
-├── background_script_built.js    # Built background script (generated)
-├── content_script.js             # Source content script with Google Cloud Vision API
-├── content_script_built.js       # Built content script (generated)
-├── manifest.json                 # Extension manifest
-└── package.json                  # Build scripts
+├── content_script.js           # Source with Google Cloud Vision API
+├── background_script.js        # Background service worker
+├── popup.html/js               # Extension popup
+├── dist/                       # Production build (generated)
+│   ├── content_script.js       # Minified (21KB)
+│   ├── background_script.js    # Background (1.6KB)
+│   ├── manifest.json           # Extension manifest
+│   ├── popup.html/js           # Popup files
+│   ├── payment scripts         # Payment integrations
+│   ├── stationlist.json        # Station data
+│   └── icons                   # Extension icons
+└── package.json                # Build scripts
 ```
 
 ## OCR Integration
@@ -66,13 +81,30 @@ The extension uses Google Cloud Vision API for automatic captcha solving:
 
 The build process uses esbuild to bundle the content script:
 
-- **Content Script**: `content_script.js` → `content_script_built.js` (29KB, uses Google Cloud Vision API)
-- **Background Script**: `background_script.js` → `background_script_built.js` (1.8KB, simple copy)
-- OCR processing happens in content script using Google Cloud Vision API
+- **Development**: Unminified code in root directory (~29KB)
+- **Production**: Minified code in `dist/` folder (~21KB, 28% smaller)
+- OCR processing uses Google Cloud Vision API
+- API key is needed in content_script.js
+
+## API Key Configuration
+
+To use your own Google Cloud Vision API key:
+
+1. Edit `content_script.js` line 431
+2. Replace the API key with your own
+3. Build: `npm run build:prod`
+
+Get your API key from: https://console.cloud.google.com/
 
 ## Troubleshooting
 
-If you encounter import/export errors:
-1. Make sure you've run `npm run build`
+**Import/Export Errors:**
+1. Make sure you've run `npm run build:prod` for production
 2. Check that the `dist/` folder contains the built files
 3. Reload the extension in Chrome after building
+
+**OCR Not Working:**
+1. Check console for API key errors
+2. Verify API key is valid
+3. Check Google Cloud Vision API quota
+4. Default API key has limited usage - get your own key
