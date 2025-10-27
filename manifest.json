@@ -35,7 +35,7 @@
   ],
   "description": "An auto fill service to help booking train tickets by automating form filling in IRCTC website.",
   "host_permissions": [
-    "https://www.irctc.co.in/",
+    "https://www.irctc.co.in/"
   ],
   "icons": {
     "128": "rail_128.png",
@@ -48,7 +48,10 @@
   "permissions": ["scripting", "tabs", "storage"],
   "web_accessible_resources": [
     {
-      "resources": ["stationlist.json", "train_data.js"],
+      "resources": [
+        "stationlist.json", 
+        "train_data.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ],
