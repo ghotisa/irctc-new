@@ -565,7 +565,10 @@ fetchStationData().then((e) => {
         .addEventListener('change', setJourneyClass),
       document
         .querySelector('#quota-input')
-        .addEventListener('change', setQuota);
+        .addEventListener('change', setQuota),
+      document.querySelector('#showirctcpswd').addEventListener('change', () => {
+        showirctcpswd();
+      });
     for (let e = 0; e < 6; e++)
       document
         .querySelector(`#passenger-name-${e + 1}`)
@@ -690,9 +693,6 @@ fetchStationData().then((e) => {
         .querySelector('#staticpassword')
         .addEventListener('change', setprojectId),
       document.querySelector('#submit-btn').addEventListener('click', saveForm),
-      document.querySelector('#load-btn-1').addEventListener('click', () => {
-        startScript();
-      }),
       document
         .querySelector('#clear-btn')
         .addEventListener('click', () => clearData()),
