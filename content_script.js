@@ -503,37 +503,23 @@ async function getCaptchaTC() {
   }
 }
 function loadLoginDetails() {
-  const e = document.querySelector('#divMain > app-login'),
-    t = e.querySelector("input[type='text'][formcontrolname='userid']"),
-    o = e.querySelector("input[type='password'][formcontrolname='password']");
-  e.querySelector("button[type='submit']");
-  if (
-    ((t.value = user_data.irctc_credentials.user_name ?? ''),
-    t.dispatchEvent(new Event('input')),
-    t.dispatchEvent(new Event('change')),
-    (o.value = user_data.irctc_credentials.password ?? ''),
-    o.dispatchEvent(new Event('input')),
-    o.dispatchEvent(new Event('change')),
-    document.querySelector('#captcha').scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-      inline: 'nearest',
-    }),
-    void 0 !== user_data.other_preferences.autoCaptcha &&
-      user_data.other_preferences.autoCaptcha)
-  )
-    setTimeout(() => {
-      getCaptchaTC();
-    }, 500);
-  else {
-    console.log('Manual captcha filling');
-    let e = 'X';
-    const t = document.querySelector('#captcha');
-    (t.value = e),
-      t.dispatchEvent(new Event('input')),
-      t.dispatchEvent(new Event('change')),
-      t.focus();
-  }
+  const loginModal  = document.querySelector('app-login')
+  const userNameInput = loginModal.querySelector(
+    "input[type='text'][formcontrolname='userid']"
+  );
+  const passwordInput = loginModal.querySelector(
+    "input[type='password'][formcontrolname='password']"
+  );
+  const submitBtn = loginModal.querySelector("button[type='submit']");
+
+  userNameInput.value = user_data['irctc_credentials']['user_name'] ?? '';
+  userNameInput.dispatchEvent(new Event('input'));
+  userNameInput.dispatchEvent(new Event('change'));
+
+  passwordInput.value = user_data['irctc_credentials']['password'] ?? '';
+  passwordInput.dispatchEvent(new Event('input'));
+  passwordInput.dispatchEvent(new Event('change'));
+  submitBtn?.click();
 }
 function loadJourneyDetails() {
   console.log('filling_journey_details');
@@ -571,71 +557,6 @@ function loadJourneyDetails() {
     addDelay(300);
   const l = e.querySelector("button.search_btn.train_Search[type='submit']");
   addDelay(300), console.log('filled_journey_details'), l.click();
-}
-function selectJourneyOld() {
-  if (!user_data.journey_details['train-no']) return;
-  const e = [
-    ...document
-      .querySelector('#divMain > div > app-train-list')
-      .querySelectorAll('.tbis-div app-train-avl-enq'),
-  ];
-  console.log(user_data.journey_details['train-no']);
-  const t = e.filter((e) =>
-    e
-      .querySelector('div.train-heading')
-      .innerText.trim()
-      .includes(user_data.journey_details['train-no'])
-  )[0];
-  if (!t)
-    return (
-      console.log('Train not found.'),
-      alert('Train not found'),
-      void statusUpdate('journey_selection_stopped.no_train')
-    );
-  const o = classTranslator(user_data.journey_details.class),
-    r = new Date(user_data.journey_details.date).toString().split(' '),
-    a = { attributes: !1, childList: !0, subtree: !0 };
-  [...t.querySelectorAll('table tr td div.pre-avl')]
-    .filter((e) => e.querySelector('div').innerText === o)[0]
-    ?.click();
-  const n = document.querySelector('#divMain > div > app-train-list > p-toast');
-  new MutationObserver((e, a) => {
-    const n = [
-        ...t.querySelectorAll(
-          "div p-tabmenu ul[role='tablist'] li[role='tab']"
-        ),
-      ].filter((e) => e.querySelector('div').innerText === o)[0],
-      l = [...t.querySelectorAll('div div table td div.pre-avl')].filter(
-        (e) => e.querySelector('div').innerText === `${r[0]}, ${r[2]} ${r[1]}`
-      )[0],
-      i = t.querySelector('button.btnDefault.train_Search.ng-star-inserted');
-    if (n) {
-      if ((console.log(1), !n.classList.contains('ui-state-active')))
-        return console.log(2), void n.click();
-      l &&
-        (console.log(3),
-        l.classList.contains('selected-class')
-          ? (console.log(4), i.click(), a.disconnect())
-          : (console.log(5), l.click()));
-    } else console.log('6'), l.click(), i.click(), a.disconnect();
-  }).observe(t, a);
-  const l = new MutationObserver((e, r) => {
-    console.log('Popup error'),
-      console.log(
-        'Class count ',
-        [...t.querySelectorAll('table tr td div.pre-avl')].length
-      ),
-      console.log('Class count ', [
-        ...t.querySelectorAll('table tr td div.pre-avl'),
-      ]),
-      n.innerText.includes('Unable to perform') &&
-        (console.log('Unable to perform'),
-        [...t.querySelectorAll('table tr td div.pre-avl')]
-          .filter((e) => e.querySelector('div').innerText === o)[0]
-          ?.click(),
-        r.disconnect());
-  });
-  l.observe(n, a);
 }
 function retrySelectJourney() {
   console.log('Retrying selectJourney...'), setTimeout(selectJourney, 1e3);
@@ -939,38 +860,83 @@ function submitPassengerDetailsForm(e) {
         window.scrollBy(0, 600, 'smooth'));
     }, 500);
 }
+
 function continueScript() {
-  const e = document.querySelector(
-    'body > app-root > app-home > div.header-fix > app-header > div.col-sm-12.h_container > div.text-center.h_main_div > div.row.col-sm-12.h_head1 > a.search_btn.loginText.ng-star-inserted'
-  );
-  window.location.href.includes('train-search')
-    ? ('LOGOUT' === e.innerText.trim().toUpperCase() && loadJourneyDetails(),
-      'LOGIN' === e.innerText.trim().toUpperCase() &&
-        (e.click(), loadLoginDetails()))
-    : window.location.href.includes('nget/booking/train-list') ||
-      console.log('Nothing to do');
+  statusUpdate('from continue_script fn');
+  const loginBtn = getLoginLogoutBtn();
+  if(!loginBtn){
+    console.log('No login button found');
+    return;
+  }
+  // fill data in respective form at different pages
+  if (window.location.href.includes('train-search')) {
+    if (loginBtn?.innerText?.trim()?.toUpperCase() === 'LOGOUT') {
+      statusUpdate('from continue_script fn->LOGOUT-> loadJourneyDetails');
+      loadJourneyDetails();
+    }
+    if (loginBtn.innerText.trim().toUpperCase() === 'LOGIN / REGISTER') {
+      statusUpdate('from continue_script fn->LOGIN-> loadLoginDetails');
+      loginBtn.click();
+      loadLoginDetails();
+      
+      addDelay(300);
+      if(getLoginLogoutBtn()?.innerText?.trim()?.toUpperCase() === 'LOGOUT'){
+        statusUpdate('login_success');
+      }
+
+      // click outside of login button modal
+      document.querySelector('app-header').click();
+    }
+  } else if (window.location.href.includes('nget/booking/train-list')) {
+    console.log('nget/booking/train-list');
+  } else {
+    console.log('No script ahead');
+  }
 }
-async function a() {}
+
 window.onload = function (e) {
-  setInterval(function () {
-    console.log('Repeater'), statusUpdate('Keep listener alive.');
-  }, 15e3);
-  const t = document.querySelector(
-    'body > app-root > app-home > div.header-fix > app-header > div.col-sm-12.h_container > div.text-center.h_main_div > div.row.col-sm-12.h_head1 '
-  );
-  new MutationObserver((e, o) => {
-    e.filter(
-      (e) =>
-        'childList' === e.type &&
-        e.addedNodes.length > 0 &&
-        [...e.addedNodes].filter(
-          (e) => 'LOGOUT' === e?.innerText?.trim()?.toUpperCase()
-        ).length > 0
-    ).length > 0
-      ? (o.disconnect(), loadJourneyDetails())
-      : (t.click(), loadLoginDetails());
-  }).observe(t, { attributes: !1, childList: !0, subtree: !1 }),
-    chrome.storage.local.get(null, (e) => {
-      (user_data = e), continueScript();
-    });
+  const loginBtn = getLoginLogoutBtn();
+  if (!loginBtn) {
+    statusUpdate('No login button found');
+    return;
+  }
+  // Observe a stable parent (nav) so we see changes even if the button is replaced
+  const observeTarget = loginBtn.closest('app-header') || document.body;
+  const config = { attributes: false, childList: true, subtree: false };
+  const loginDetectorCallback = (mutationList, observer) => {
+    // Re-query current button and check its text (handles replaced nodes and text-node mutations)
+    const myAccountButton = document.querySelector("nav a[aria-label='Menu my Account']");
+    if (myAccountButton && myAccountButton.parentElement.querySelector("a[routerlink='/logout']")) {
+      observer.disconnect();
+      statusUpdate(
+        'log in now loading journey details && closing mutationObserver of loginBtn'
+      );
+      loadJourneyDetails();
+      return;
+    }
+  };
+  const observer = new MutationObserver(loginDetectorCallback);
+  observer.observe(observeTarget, config);
+  statusUpdate('mutationObserver Created for loginBtn');
+  console.log('content script attached');
+  chrome.storage.local.get(null, (result) => {
+    user_data = result;
+    statusUpdate('loaded user data from local storage');
+    continueScript();
+  });
 };
+
+function getLoginLogoutBtn() {
+  const menuBtn = document.querySelector('.h_menu_drop_button');
+  let loginBtn = document.querySelector(
+    "nav a.search_btn.loginText"
+  );
+  if(menuBtn && !menuBtn.classList.toString().includes('hidden')){
+    document.querySelector('.h_menu_drop_button a').click();
+    addDelay(300);
+    loginBtn = document.querySelector(
+      "p-sidebar button.search_btn.loginText"
+    );
+  }
+  return loginBtn;
+}
